@@ -24,5 +24,8 @@ alter session set "_oracle_script"=true;
 create user tjoeun
 identified by 1234;
 
+
 grant resource, connect to tjoeun;
 
+--insert시 생성된 유저에게 테이블스페이스에 얼마만큼의 영역을 할당할 것인지 정해줘야함
+alter user tjoeun default tablespace users quota unlimited on users;
