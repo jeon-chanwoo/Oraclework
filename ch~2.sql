@@ -48,11 +48,15 @@ select professor_name, professor_ssn
     from tb_professor
     where professor_name not like '___';
     
-select professor_name 교수이름, trunc(months_between(sysdate,to_date(lpad(professor_ssn,6)))/12) as 나이
-    from tb_professor
-    where substr(professor_ssn,8,1) = '1'
-    and trunc(months_between(sysdate,to_date(lpad(professor_ssn,6)))/12)>'0'
-    order by 2 asc;
+SELECT 
+    professor_name 교수이름, 
+    TRUNC((MONTHS_BETWEEN(SYSDATE, TO_DATE('19' || SUBSTR(professor_ssn, 1, 6), 'YYMMDD')) / 12)) AS 나이
+FROM 
+    tb_professor
+WHERE  
+    SUBSTR(professor_ssn, 8, 1) = '1'
+    AND TRUNC((MONTHS_BETWEEN(SYSDATE, TO_DATE('19' || SUBSTR(professor_ssn, 1, 6), 'YYMMDD')) / 12)) > 0
+ORDER BY 나이 ASC;
     
 select substr(professor_name,2,2) 이름
     from tb_professor;
@@ -91,13 +95,12 @@ from tb_grade,tb_student
     order by substr(term_no,1,4);
 
 SELECT 
-    tb_class.department_no AS "학과코드명", 
+    department_no AS "학과코드명", 
     COUNT(*) AS "휴학생 수"
 FROM tb_student
-JOIN tb_class ON tb_student.department_no = tb_class.department_no
 WHERE  tb_student.absence_yn = 'Y'
-GROUP BY  tb_class.department_no
-ORDER BY  tb_class.department_no ASC;
+GROUP BY  department_no
+ORDER BY  department_no ASC;
 
 select student_name, count(*)
     from tb_student
