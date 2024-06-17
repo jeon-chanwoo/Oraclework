@@ -36,3 +36,12 @@ identified by 1234;
 grant resource, connect to chjoeun;
 
 alter user chjoeun default tablespace users quota unlimited on users;
+
+//ddl
+alter session set "_oracle_script"=true;
+create user DDL
+identified by 1234;
+
+grant resource, connect to DDL;
+
+alter user DDL default tablespace users quota unlimited on users;
