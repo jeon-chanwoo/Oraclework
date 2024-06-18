@@ -431,109 +431,178 @@ WHERE 순위 <= 5;
 
 --------------------------------------------------------- 연습문제 --------------------------------------------------------
 -- 1. 2020년 12월 25일의 요일 조회
-SELECT TO_CHAR(to_date(20201225), 'DAY') FROM DUAL;
--- 2. 70년대 생(1970~1979) 중 여자이면서 전씨인 사원의 사원명, 주민번호, 부서명, 직급명 조회    
-select emp_name, emp_no,dept_title,job_name
-from employee,job,department
-where employee.job_code=job.job_code
-and employee.dept_code=department.dept_id
-and emp_name like '전%'
-and to_number('19'||substr(emp_no,1,2)) between 1970 and 1979
-and substr(emp_no,8,1)='2' ;
+SELECT TO_CHAR(TO_DATE('20201225','YYYYMMDD'), 'DAY')
+ FROM DUAL;
+ 
+-- 2. 70년대 생(1970~1979) 중 여자이면서 전씨인 사원의 사원명, 주민번호, 부서명, 직급명 조회
+-- ANSI 구문
+SELECT EMP_NAME, EMP_NO, DEPT_ID, JOB_NAME
+ FROM EMPLOYEE
+   JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+   JOIN JOB USING (JOB_CODE)
+WHERE SUBSTR(EMP_NO, 1, 2) >= 70 AND SUBSTR(EMP_NO, 1, 2) <= 79
+    AND SUBSTR(EMP_NO, 8, 1) = 2
+    AND EMP_NAME LIKE '전%';
 
+-- 오라클전용 구문
+SELECT EMP_NAME, EMP_NO, DEPT_ID, JOB_NAME
+ FROM EMPLOYEE E,  DEPARTMENT D,  JOB J
+WHERE DEPT_CODE = DEPT_ID
+   AND E.JOB_CODE = J.JOB_CODE
+   AND SUBSTR(EMP_NO, 1, 2) >= 70 AND SUBSTR(EMP_NO, 1, 2) <= 79
+   AND SUBSTR(EMP_NO, 8, 1) = 2
+   AND EMP_NAME LIKE '전%';
+   
 -- 3. 나이가 가장 막내의 사번, 사원명, 나이, 부서명, 직급명 조회
-select employee.job_code,emp_name,trunc(MONTHS_BETWEEN(sysdate ,to_date('19'||substr(emp_no,1,6)))/12) as 나이, dept_title, job_name
-from employee,job,department
-where employee.job_code=job.job_code
-and employee.dept_code=department.dept_id
-and  (to_number('19'||substr(emp_no,1,6)))= (select max(to_number('19'||substr(emp_no,1,6)))
-                                        from employee);
-                                        
--- 4. 이름에 ‘하’가 들어가는 사원의 사번, 사원명, 직급명 조회
-select emp_id, emp_name,job_name
-from employee,job
-where emp_name like '%하%'
-and employee.job_code = job.job_code;
--- 5. 부서 코드가 D5이거나 D6인 사원의 사원명, 직급명, 부서코드, 부서명 조회
-select employee.emp_name,job_name,dept_code,dept_title
-from employee, job, department
-where dept_code in ('D5','D6')
-and employee.job_code=job.job_code
-and employee.dept_code=department.dept_id;
--- 6. 보너스를 받는 사원의 사원명, 보너스, 부서명, 지역명 조회
-select emp_name,bonus,dept_title,national_name
-from employee,department,national,location
-where bonus is not null
-and employee.dept_code=department.dept_id
-and department.location_id=location.local_code
-and location.national_code = national.national_code;
--- 7. 모든 사원의 사원명, 직급명, 부서명, 지역명 조회
-select emp_name, job_name,dept_title,national_name
-from employee, job, department,national,location
-where employee.dept_code = department.dept_id
-and employee.job_code =job.job_code
-and department.location_id=location.local_code
-and location.national_code = national.national_code;
--- 8. 한국이나 일본에서 근무 중인 사원의 사원명, 부서명, 지역명, 국가명 조회
-select emp_name, dept_title, local_name,national_name
-from employee, department, national, location
-where national.national_name in('한국','일본')
-and employee.dept_code = department.dept_id
-and department.location_id=location.local_code
-and location.national_code = national.national_code;
--- 9. 하정연 사원과 같은 부서에서 일하는 사원의 사원명, 부서코드 조회
-select emp_name, dept_code
-from employee
-where dept_code=
-                            (select dept_code
-                            from employee
-                            where emp_name = '하정연');
--- 10. 보너스가 없고 직급 코드가 J4이거나 J7인 사원의 사원명, 직급명, 급여 조회 (NVL 이용)
-select emp_name, job_name, salary
-from employee,job
-where bonus is null
-and employee.job_code in ('J4','J7')
-and employee.job_code = job.job_code;
--- 11. 퇴사 하지 않은 사람과 퇴사한 사람의 수 조회
-SELECT 
-    SUM(CASE WHEN ent_yn = 'Y' THEN 1 ELSE 0 END) AS count_Y,
-    SUM(CASE WHEN ent_yn = 'N' THEN 1 ELSE 0 END) AS count_N
-FROM employee;
--- 12. 보너스 포함한 연봉이 높은 5명의 사번, 사원명, 부서명, 직급명, 입사일, 순위 조회
+SELECT EMP_ID, EMP_NAME, 
+     EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM (TO_DATE(SUBSTR(EMP_NO,1,2), 'RR'))) AS 나이,
+           DEPT_TITLE, 
+           JOB_NAME
+ FROM EMPLOYEE
+   JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+   JOIN JOB USING (JOB_CODE)
+WHERE EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM (TO_DATE(SUBSTR(EMP_NO,1,2), 'RR'))) =
+           (SELECT MIN(EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM (TO_DATE(SUBSTR(EMP_NO,1,2), 'RR')))) 
+             FROM EMPLOYEE);
 
-SELECT rownum, e.*
-FROM (SELECT EMP_NAME, (SALARY * NVL(1 + BONUS, 1)) * 12 AS 연봉
-                FROM EMPLOYEE
-                ORDER BY 연봉 DESC) e
-WHERE rownum <= 5;
+-- INLINE VIEW
+SELECT *
+ FROM (SELECT EMP_ID, EMP_NAME, 
+            EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM (TO_DATE(SUBSTR(EMP_NO,1,2), 'RR'))) AS 나이,
+            DEPT_TITLE, 
+            JOB_NAME
+ FROM EMPLOYEE
+   JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+   JOIN JOB USING (JOB_CODE)) E
+WHERE E.나이 =  (SELECT MIN(EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM (TO_DATE(SUBSTR(EMP_NO,1,2), 'RR')))) 
+                           FROM EMPLOYEE);
+                           
+-- WITH 사용
+WITH E AS (SELECT EMP_ID, EMP_NAME, 
+                 EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM (TO_DATE(SUBSTR(EMP_NO,1,2), 'RR'))) AS 나이,
+                DEPT_TITLE, 
+                JOB_NAME
+        FROM EMPLOYEE
+          JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+          JOIN JOB USING (JOB_CODE))
+          
+SELECT *
+ FROM E
+WHERE 나이 = (SELECT MIN(나이) FROM E);
+                         
+-- 4. 이름에 ‘하’가 들어가는 사원의 사번, 사원명, 직급명 조회
+SELECT EMP_ID, EMP_NAME, JOB_NAME
+ FROM EMPLOYEE
+   JOIN JOB USING (JOB_CODE)
+WHERE EMP_NAME LIKE '%하%';   
+
+-- 5. 부서 코드가 D5이거나 D6인 사원의 사원명, 직급명, 부서코드, 부서명 조회
+SELECT EMP_NAME, JOB_NAME, DEPT_CODE, DEPT_TITLE
+ FROM EMPLOYEE
+   JOIN DEPARTMENT ON (DEPT_CODE=DEPT_ID)
+   JOIN JOB USING(JOB_CODE)
+WHERE DEPT_CODE IN ('D5','D6');   
+
+-- 6. 보너스를 받는 사원의 사원명, 보너스, 부서명, 지역명 조회
+SELECT EMP_NAME, BONUS, DEPT_TITLE, LOCAL_NAME
+ FROM EMPLOYEE
+   JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+   JOIN LOCATION ON (LOCATION_ID = LOCAL_CODE)
+WHERE BONUS IS NOT NULL;
+   
+-- 7. 모든 사원의 사원명, 직급명, 부서명, 지역명 조회
+SELECT EMP_NAME, JOB_NAME, DEPT_TITLE, LOCAL_NAME
+ FROM EMPLOYEE
+   JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+   JOIN JOB USING(JOB_CODE)
+   JOIN LOCATION ON (LOCATION_ID = LOCAL_CODE);
+   
+-- 8. 한국이나 일본에서 근무 중인 사원의 사원명, 부서명, 지역명, 국가명 조회 
+SELECT EMP_NAME, DEPT_TITLE, LOCAL_NAME, NATIONAL_NAME
+ FROM EMPLOYEE
+   JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+   JOIN LOCATION ON (LOCATION_ID = LOCAL_CODE)
+   JOIN NATIONAL USING(NATIONAL_CODE)
+WHERE NATIONAL_NAME IN ('한국','일본');   
+
+-- 9. 하정연 사원과 같은 부서에서 일하는 사원의 사원명, 부서코드 조회
+SELECT EMP_NAME, DEPT_CODE
+ FROM EMPLOYEE
+WHERE DEPT_CODE = (SELECT DEPT_CODE
+                                    FROM EMPLOYEE
+                                  WHERE EMP_NAME = '하정연');
+
+-- 10. 보너스가 없고 직급 코드가 J4이거나 J7인 사원의 사원명, 직급명, 급여 조회
+SELECT EMP_NAME, JOB_NAME, SALARY
+ FROM EMPLOYEE
+  JOIN JOB USING(JOB_CODE)
+WHERE BONUS IS NULL
+    AND JOB_CODE IN ('J4', 'J7');
+  
+-- 11. 퇴사 하지 않은 사람과 퇴사한 사람의 수 조회
+SELECT COUNT(*)
+ FROM EMPLOYEE
+GROUP BY ENT_YN;
+
+-- 12. 보너스 포함한 연봉이 높은 5명의 사번, 사원명, 부서명, 직급명, 입사일, 순위 조회
+SELECT *
+ FROM (SELECT EMP_ID, EMP_NAME, DEPT_TITLE, JOB_NAME, HIRE_DATE, 
+                       RANK() OVER(ORDER BY(SALARY*NVL(1+BONUS,1)*12) DESC) 순위
+            FROM EMPLOYEE
+              JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+              JOIN JOB USING(JOB_CODE))
+WHERE 순위 <= 5;
+
 -- 13. 부서 별 급여 합계가 전체 급여 총 합의 20%보다 많은 부서의 부서명, 부서별 급여 합계 조회
---	13-1. JOIN과 HAVING 사용   
-SELECT d.dept_title, SUM(e.salary) AS dept_salary
-FROM employee e
-JOIN department d ON e.dept_code = d.dept_id
-GROUP BY d.dept_title
-HAVING SUM(e.salary) > (
-    SELECT SUM(salary) * 0.2
-    FROM employee
-);
-             
---	13-2. 인라인 뷰 사용      
-SELECT dept_title, dept_salary
-FROM (
-    SELECT d.dept_title, SUM(e.salary) AS dept_salary
-    FROM employee e
-    JOIN department d ON e.dept_code = d.dept_id
-    GROUP BY d.dept_title
-) dept_salaries
-WHERE dept_salary > (
-    SELECT SUM(salary) * 0.2
-    FROM employee
-);
+--	13-1. JOIN과 HAVING 사용 
+SELECT DEPT_TITLE, SUM(SALARY)
+ FROM EMPLOYEE
+   JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+GROUP BY DEPT_TITLE
+HAVING SUM(SALARY) > (SELECT SUM(SALARY)*0.2
+                                       FROM EMPLOYEE);
+   
+--	13-2. 인라인 뷰 사용  
+SELECT *
+ FROM (SELECT DEPT_TITLE, SUM(SALARY) "부서별 합"
+            FROM EMPLOYEE
+             JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+            GROUP BY DEPT_TITLE)
+WHERE "부서별 합" > (SELECT SUM(SALARY)*0.2
+                                       FROM EMPLOYEE);   
+                                       
 --	13-3. WITH 사용
+WITH TOTAL_SAL AS (SELECT DEPT_TITLE, SUM(SALARY) "부서별 합"
+            FROM EMPLOYEE
+             JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+            GROUP BY DEPT_TITLE)
+            
+SELECT *
+ FROM TOTAL_SAL
+WHERE "부서별 합" > (SELECT SUM(SALARY)*0.2
+                                       FROM EMPLOYEE);
+                                       
 -- 14. 부서명별 급여 합계 조회(NULL도 조회되도록)
-SELECT dept_title,sum(nvl(salary,1))
-from employee, department
-where employee.dept_code=department.dept_id
-group by dept_title;
+-- ANSI 구문
+SELECT DEPT_TITLE, SUM(SALARY)
+FROM EMPLOYEE
+LEFT JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+GROUP BY DEPT_TITLE;
+
+-- 오라클전용 구문
+SELECT DEPT_TITLE, SUM(SALARY)
+FROM EMPLOYEE, DEPARTMENT
+WHERE DEPT_CODE = DEPT_ID(+)
+GROUP BY DEPT_TITLE;
 
 -- 15. WITH를 이용하여 급여합과 급여평균 조회
+WITH SUM_SAL AS (SELECT SUM(SALARY) FROM EMPLOYEE),
+         AVG_SAL AS (SELECT CEIL(AVG(SALARY)) FROM EMPLOYEE)
+
+/*
+SELECT * FROM SUM_SAL
+UNION
+SELECT * FROM AVG_SAL;
+*/
+SELECT *
+ FROM SUM_SAL, AVG_SAL;
