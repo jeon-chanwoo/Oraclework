@@ -604,7 +604,7 @@ INSERT INTO TB_MEMBER VALUES(5, 'user05', 'pass05','name5','M','집주소5',555,
 			이때 부모 데이터 삭제시 자식 데이터 값이 NULL값이 되도록 옵션 설정
 	RENT_DATE(대여일) DATE -- 기본값 SYSDATE
 
-   - 3개 정도 샘플데이터 추가하기
+   - 3개 정도 샘플데이터 추가하기 
 */
 
 CREATE TABLE TB_RENT(
